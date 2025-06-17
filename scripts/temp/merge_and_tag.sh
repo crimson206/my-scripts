@@ -2,15 +2,16 @@
 
 # @description: Merge branches and optionally create git tag
 # @arg tag_name [optional]: Tag name to create (e.g., v2.0.2)
-# @option from [default=dev]: Source branch to merge from
-# @option to [default=main]: Target branch to merge to
+# @option from: Source branch to merge from
+# @option to: Target branch to merge to
 # @option force,f [flag]: Force re-tag if tag already exists
 # @option dry-run,d [flag]: Preview changes without executing
-# @option no-push [flag]: Don't push to remote (local only)
+# @option no-push,n [flag]: Don't push to remote (local only)
 
 # USER SETTING
-# Branch names are now controlled by --from and --to options
-# Defaults: --from=dev --to=main
+# Set default values for branch names
+FROM=${FROM:-dev}
+TO=${TO:-main}
 
 # Function to log messages
 log() {
@@ -46,10 +47,27 @@ if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
 fi
 
 # Check if working directory is clean
-if [ "$DRY_RUN" != "1" ] && ! git diff --quiet; then
+if ! git diff --quiet; then
     echo "Error: Working directory has uncommitted changes"
     echo "Please commit or stash your changes first"
+    echo ""
+    echo "Current status:"
+    git status --porcelain
+    echo ""
     exit 1
+fi
+
+# Check if branches exist (only in actual run)
+if [ "$DRY_RUN" != "1" ]; then
+    if ! git show-ref --verify --quiet refs/heads/$FROM; then
+        echo "Error: Source branch '$FROM' does not exist"
+        exit 1
+    fi
+    
+    if ! git show-ref --verify --quiet refs/heads/$TO; then
+        echo "Error: Target branch '$TO' does not exist"
+        exit 1
+    fi
 fi
 
 # Get current branch
@@ -76,8 +94,21 @@ fi
 log "Merging $FROM into $TO"
 run_cmd "git merge $FROM"
 if [ $? -ne 0 ] && [ "$DRY_RUN" != "1" ]; then
-    echo "Error: Failed to merge $FROM"
-    echo "Please resolve conflicts manually"
+    echo "Error: Failed to merge $FROM into $TO"
+    echo ""
+    echo "This is likely due to merge conflicts."
+    echo "To resolve:"
+    echo "  1. Fix conflicts in the affected files"
+    echo "  2. Run: git add <resolved-files>"
+    echo "  3. Run: git commit"
+    echo "  4. Run: git push origin $TO"
+    echo ""
+    echo "Or to abort the merge:"
+    echo "  git merge --abort"
+    echo "  git checkout $CURRENT_BRANCH"
+    echo ""
+    echo "Current status:"
+    git status --porcelain
     exit 1
 fi
 

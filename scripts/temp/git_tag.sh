@@ -16,7 +16,7 @@ if [ -z "$TAG_NAME" ]; then
     echo "Error: Tag name is required"
     echo "Usage: git_tag <tag_name>"
     exit 1
-fiW
+fi
 
 # 현재 브랜치 확인
 BRANCH=$(git branch --show-current)

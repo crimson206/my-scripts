@@ -1,6 +1,6 @@
 {
     "name": "miniature",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "example pkg.",
     "db-repo": "https://github.com/crimson206/my-scripts",
     "branch": "main",
